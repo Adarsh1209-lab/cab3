@@ -4,36 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cab Booking System</title>
-    <style>
-        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
-        .container { max-width: 600px; margin:auto; background:white; padding:20px; border-radius:10px; }
-        input, button, textarea { width:100%; padding:10px; margin:10px 0; }
 
-        /* Admin Panel */
-        #adminPanel { margin-top:40px; padding:20px; background:#222; color:white; border-radius:10px; display:none; }
-        #bookingList { background:white; color:black; padding:10px; border-radius:10px; }
+    <style>
+        body { font-family: Arial; background:#f5f5f5; padding:20px; }
+        .container { max-width: 600px; margin:auto; background:white; padding:20px; border-radius:10px; }
+        input, button { width:100%; padding:10px; margin:8px 0; }
+
+        #adminPanel, #driver-dashboard { 
+            display:none;
+            margin-top:30px;
+            padding:20px;
+            background:#222;
+            color:white;
+            border-radius:10px;
+        }
+        #bookingList, #driver-booking-list { 
+            background:white; 
+            color:black; 
+            padding:10px; 
+            border-radius:10px; 
+        }
         .booking-item { border-bottom:1px solid #ccc; padding:10px 0; }
     </style>
 </head>
 <body>
+
+    
+
+    <!-- DRIVER LOGIN -->
     <div class="container">
-        <h2>Online Cab Booking</h2>
-
-        <input type="text" id="name" placeholder="Your Name" />
-        <input type="text" id="phone" placeholder="Phone Number" />
-        <input type="text" id="pickup" placeholder="Pickup Location" />
-        <input type="text" id="drop" placeholder="Drop Location" />
-        <input type="datetime-local" id="date" />
-        <button onclick="submitBooking()">Book Now</button>
-
-        <p id="msg"></p>
-    </div>
-
-    <!-- ADMIN LOGIN -->
-    <div class="container" style="margin-top:30px;">
-        <h3>Admin Login</h3>
-        <input type="password" id="adminPass" placeholder="Enter Admin Password" />
-        <button onclick="loginAdmin()">Login</button>
+        <h3>Driver Login</h3>
+        <input type="text" id="driver-username" placeholder="Username" />
+        <input type="password" id="driver-password" placeholder="Password" />
+        <button onclick="driverLogin()">Login</button>
     </div>
 
     <!-- ADMIN PANEL -->
@@ -42,106 +45,115 @@
         <div id="bookingList"></div>
     </div>
 
+    <!-- DRIVER DASHBOARD -->
+    <div id="driver-dashboard">
+        <h2>Driver Dashboard</h2>
+        <p>All Bookings</p>
+        <div id="driver-booking-list"></div>
+        <button onclick="logoutDriver()" style="margin-top:10px;">Logout</button>
+    </div>
+
+
 <script>
-    let bookings = [];  // Temporary storage
+// ------------------------------------------------
+// SAVE BOOKING TO LOCAL STORAGE
+// ------------------------------------------------
+function submitBooking() {
+    let booking = {
+        name: document.getElementById("name").value,
+        phone: document.getElementById("phone").value,
+        pickup: document.getElementById("pickup").value,
+        drop: document.getElementById("drop").value,
+        date: document.getElementById("date").value
+    };
 
-    function submitBooking() {
-        let booking = {
-            name: document.getElementById("name").value,
-            phone: document.getElementById("phone").value,
-            pickup: document.getElementById("pickup").value,
-            drop: document.getElementById("drop").value,
-            date: document.getElementById("date").value
-        };
+    let list = JSON.parse(localStorage.getItem("cab_bookings")) || [];
+    list.push(booking);
 
-        bookings.push(booking);
-        document.getElementById("msg").innerText = "Booking Submitted Successfully!";
+    localStorage.setItem("cab_bookings", JSON.stringify(list));
+
+    document.getElementById("msg").innerText = "Booking Submitted Successfully!";
+}
+
+// ------------------------------------------------
+// ADMIN LOGIN
+// ------------------------------------------------
+function loginAdmin() {
+    let pass = document.getElementById("adminPass").value;
+
+    if(pass === "admin123"){
+        document.getElementById("adminPanel").style.display = 'block';
+        displayBookings();
+    } else {
+        alert("Wrong Password!");
     }
+}
 
-    function loginAdmin() {
-        let pass = document.getElementById("adminPass").value;
-        if(pass === "admin123"){
-            document.getElementById("adminPanel").style.display = 'block';
-            displayBookings();
-        } else {
-            alert("Wrong Password!");
-        }
-    }
+// ------------------------------------------------
+// DISPLAY BOOKINGS (ADMIN)
+// ------------------------------------------------
+function displayBookings() {
+    let bookings = JSON.parse(localStorage.getItem("cab_bookings")) || [];
+    let output = "";
 
-    function displayBookings() {
-        let output = "";
-        bookings.forEach((b, i) => {
-            output += `
-                <div class='booking-item'>
-                    <strong>Booking ${i+1}</strong><br>
-                    Name: ${b.name}<br>
-                    Phone: ${b.phone}<br>
-                    Pickup: ${b.pickup}<br>
-                    Drop: ${b.drop}<br>
-                    Date: ${b.date}<br>
-                </div>
-            `;
-        });
-        document.getElementById("bookingList").innerHTML = output;
+    bookings.forEach((b, i) => {
+        output += `
+            <div class='booking-item'>
+                <strong>Booking ${i+1}</strong><br>
+                Name: ${b.name}<br>
+                Phone: ${b.phone}<br>
+                Pickup: ${b.pickup}<br>
+                Drop: ${b.drop}<br>
+                Date: ${b.date}<br>
+            </div>
+        `;
+    });
+
+    document.getElementById("bookingList").innerHTML = output;
+}
+
+// ------------------------------------------------
+// DRIVER LOGIN
+// ------------------------------------------------
+function driverLogin() {
+    const user = document.getElementById('driver-username').value;
+    const pass = document.getElementById('driver-password').value;
+
+    if (user === "driver" && pass === "1234") {
+        document.getElementById("driver-dashboard").style.display = "block";
+        loadDriverBookings();
+    } else {
+        alert("Invalid Driver Login!");
     }
+}
+
+// ------------------------------------------------
+// LOAD BOOKINGS FOR DRIVER
+// ------------------------------------------------
+function loadDriverBookings() {
+    const bookings = JSON.parse(localStorage.getItem("cab_bookings")) || [];
+    const list = document.getElementById("driver-booking-list");
+
+    list.innerHTML = "";
+
+    bookings.forEach((b, index) => {
+        list.innerHTML += `
+        <div class='booking-item' style="background:white; padding:10px; border-radius:10px;">
+            <p><strong>Name:</strong> ${b.name}</p>
+            <p><strong>Pickup:</strong> ${b.pickup}</p>
+            <p><strong>Drop:</strong> ${b.drop}</p>
+            <p><strong>Date:</strong> ${b.date}</p>
+        </div>`;
+    });
+}
+
+// ------------------------------------------------
+// DRIVER LOGOUT
+// ------------------------------------------------
+function logoutDriver() {
+    document.getElementById("driver-dashboard").style.display = "none";
+}
 </script>
+
 </body>
 </html>
-
-
-<!-- DRIVER LOGIN PAGE -->
-<div id="driver-login" class="hidden p-6 max-w-md mx-auto mt-10 bg-white shadow-xl rounded-xl">
-  <h2 class="text-3xl font-bold mb-4 text-center text-deep-red">Driver Login</h2>
-  <input id="driver-username" type="text" placeholder="Username" class="w-full p-3 border rounded mb-4" />
-  <input id="driver-password" type="password" placeholder="Password" class="w-full p-3 border rounded mb-4" />
-  <button onclick="driverLogin()" class="w-full bg-deep-red text-white py-3 rounded-lg">Login</button>
-</div>
-
-<!-- DRIVER DASHBOARD -->
-<div id="driver-dashboard" class="hidden p-6 max-w-2xl mx-auto mt-10 bg-white shadow-xl rounded-xl">
-  <h2 class="text-3xl font-bold mb-4 text-center text-deep-red">Driver Dashboard</h2>
-  <p class="text-gray-600 text-center mb-6">View all bookings assigned to you</p>
-  <div id="driver-booking-list" class="space-y-4"></div>
-  <button onclick="logoutDriver()" class="mt-6 w-full bg-gray-800 text-white py-3 rounded-lg">Logout</button>
-</div>
-
-<script>
-// LOGIN FUNCTION
-function driverLogin() {
-  const user = document.getElementById('driver-username').value;
-  const pass = document.getElementById('driver-password').value;
-
-  if (user === "driver" && pass === "1234") {
-    document.getElementById('driver-login').classList.add('hidden');
-    document.getElementById('driver-dashboard').classList.remove('hidden');
-    loadDriverBookings();
-  } else {
-    alert("Invalid login!");
-  }
-}
-
-// FETCH BOOKINGS FROM LOCAL STORAGE
-function loadDriverBookings() {
-  const bookings = JSON.parse(localStorage.getItem('cab_bookings')) || [];
-  const list = document.getElementById('driver-booking-list');
-  list.innerHTML = '';
-
-  bookings.forEach((b, index) => {
-    list.innerHTML += `
-      <div class='p-4 border rounded-lg shadow'>
-        <p><strong>Name:</strong> ${b.name}</p>
-        <p><strong>Pickup:</strong> ${b.pickup}</p>
-        <p><strong>Destination:</strong> ${b.destination}</p>
-        <p><strong>Date:</strong> ${b.date}</p>
-        <p><strong>Time:</strong> ${b.time}</p>
-      </div>
-    `;
-  });
-}
-
-// LOGOUT
-function logoutDriver() {
-  document.getElementById('driver-dashboard').classList.add('hidden');
-  document.getElementById('driver-login').classList.remove('hidden');
-}
-</script>
